@@ -25,9 +25,11 @@ Table = declarative_base()
 @asynccontextmanager
 async def read() -> AsyncSession:
     async with sessionmaker() as session:
-        await session.connection(execution_options={"isolation_level": "AUTOCOMMIT"})
+        # await sesion.begin()
+        await session.connection(execution_options={"isolation_level": "AUTOCOMMIT"}) - # disable send commands to Postgres [BEGIN, ROLLBACK] through session.begin(), session.rollback() 
         yield session
-
+        # await sesion.rollback()
+        # await session.close() - clear connection
 
 @asynccontextmanager
 async def write() -> AsyncSession:
@@ -35,10 +37,11 @@ async def write() -> AsyncSession:
         try:
             async with session.begin():
                 yield session
+                # session.commit() 
         except Exception as e:
             await session.rollback()
             raise e
-
+        # await session.close() - clear connection
 
 @asynccontextmanager
 async def pgconnect(transaction: bool = False) -> AsyncSession:
